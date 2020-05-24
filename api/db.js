@@ -15,7 +15,7 @@ var db_config = {
     password: 'eaf6ae71',
     database: 'heroku_e57f098503ff54d'
 };
-  
+//23/05 
   var connection;
   
   function handleDisconnect() {
@@ -41,3 +41,12 @@ var db_config = {
   
   handleDisconnect();
 module.exports = connection
+
+// let pool = mysql.createPool(db_config);
+
+// pool.on('connection', function (_conn) {
+//     if (_conn) {
+//         logger.info('Connected the database via threadId %d!!', _conn.threadId);
+//         _conn.query('SET SESSION auto_increment_increment=1');
+//     }
+// });

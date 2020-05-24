@@ -1,7 +1,8 @@
 'use strict';
 module.exports = function(app) {
     let productsCtrl = require('./controllers/ProductsController');
-    let userCtrl = require('./controllers/UsersController');
+    //let userCtrl = require('./controllers/UsersController');
+    let userCtrl = require('./database');
     // list route to do
     app.route('/products')
         .get(productsCtrl.get)
@@ -12,8 +13,10 @@ module.exports = function(app) {
         .put(productsCtrl.update)
         .delete(productsCtrl.delete);
     
-    app.route('/users')
+    app.route('/users?page=:page')
         .get(userCtrl.get)
+    app.route('/users')
+        .get(userCtrl.getalluser)
         .post(userCtrl.store)
     app.route('/users/:userId')
         .get(userCtrl.detail)

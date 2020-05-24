@@ -2,15 +2,40 @@
 
 const util = require('util')
 const mysql = require('mysql')
-const db = require('./../db')
+//const db = require('./../db')
 
 module.exports = {
     get: (req,res) => {
-        let sql = 'SELECT * FROM users'
-        db.query(sql,(err,response) =>{
-            if (err) throw err
-            res.json(response)
+        var query="SELECT count(*) as TotalCount from users";
+        let sql = 'SELECT * FROM users';
+        db.query(query, function(err, rows){
+            if (err){
+                return err;
+            } else {
+                let totalCount = rows[0].TotalCount
+                if (req.body.start == ''|| req.body.limit ==''){
+                    let startNum = 0;
+                    let limitNum = 5;
+                } else {
+                    let startNum = parseInt(req.body.start);
+                    let limitNum = parseInt(req.body.limit);
+                }
+            } 
+            var query = "SELECT * from users ORDER BY id DESC limit ? OFFSET ?";
+            var parameters = [limitNum,startNum];
+            query = mysql.format(query, parameters);
+            db.query(query, function(err,rest){
+                if (err){
+                    res.json(err);
+                } else {
+                    res.json(rest)
+                }
+            })
         })
+        // db.query(sql,(err,response) =>{
+        //     if (err) throw err
+        //     res.json(response)
+        // })
     },
     detail: (req,res) =>{
         let sql = 'SELECT * FROM users WHERE id = ?'
