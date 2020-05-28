@@ -1,5 +1,6 @@
 const util = require('util')
 const mysql = require('mysql')
+const md5 = require('md5');
 
 const pool = mysql.createPool({
     host: 'us-cdbr-east-06.cleardb.net',
@@ -22,30 +23,43 @@ module.exports = {
         })
     },
     get: (req,res) => {
-        var query="SELECT count(*) as TotalCount from users";
-        var page = parseInt(req.query.page) || 1;
-        
-        pool.query(query, function(err, rows){
-            if (err){
-                return err;
-            } else {
-                let totalCount = rows[0].TotalCount;
-                let limit = 5;
-                let total_page = Math.ceil(totalCount/limit);
-                let start = (page - 1) * limit;
-                var query = "SELECT * from users ORDER BY id DESC limit ?,?";
-                var parameters = [start,limit];
-                query = mysql.format(query, parameters);
-                pool.query(query, function(err,rest){
-                    if (err){
-                        res.json(err);
-                    } else {
-                        res.json(rest)
-                    }
-                })
-            }
+        var numRows;
+        var queryPagination;
+        var numPerPage = parseInt(5);
+        var page = parseInt(req.query.page,10) || 0;
+        var totalPages;
+        var skip = page * numPerPage;
+        // Here we compute the LIMIT parameter for MySQL query
+        var limit = skip + ',' + numPerPage;
+        queryAsync('SELECT count(*) as numRows FROM users')
+        .then(function(results) {
+          numRows = results[0].numRows;
+          totalPages = Math.ceil(numRows / numPerPage);
+          console.log('number of pages:', numPages);
         })
-    },
+        .then(() => queryAsync('SELECT * FROM users ORDER BY id DESC LIMIT ' + limit))
+        .then(function(results) {
+          var responsePayload = {
+            results: results
+          };
+          if (page < numPages) {
+            responsePayload.pagination = {
+              current: page,
+              perPage: numPerPage,
+              previous: page > 0 ? page - 1 : undefined,
+              next: page < numPages - 1 ? page + 1 : undefined
+            }
+          }
+          else responsePayload.pagination = {
+            err: 'queried page ' + page + ' is >= to maximum page number ' + numPages
+          }
+          res.json(responsePayload);
+        })
+        .catch(function(err) {
+          console.error(err);
+          res.json({ err: err });
+        });
+      },
     detail: (req,res) =>{
         let sql = 'SELECT * FROM users WHERE id = ?'
         pool.query(sql,[req.params.userId],(err, response)=>{
@@ -63,9 +77,14 @@ module.exports = {
         })
     },
     store: (req,res)=>{
-        let data = req.body;
-        let sql = 'INSERT INTO users SET ?'
-        pool.query(sql,[data],(err,response)=>{
+        //let data = req.body;
+        let username = req.body.username;
+        let name = req.body.name;
+        let password = md5(req.body.password);
+        let sql = 'INSERT INTO users (username, name, password) VALUES (?,?,?)'
+        var parameters = [username,name, password];
+        sql = mysql.format(sql, parameters);
+        pool.query(sql,(err,response)=>{
             if (err) throw err
             res.json({message:'Insert new user success!'})
         })
@@ -77,4 +96,30 @@ module.exports = {
             res.json ({message:'Delete user success!'})
         })
     }
+        // get: (req,res) => {
+    //     var query="SELECT count(*) as TotalCount from users";
+    //     var page = parseInt(req.query.page) || 0;
+        
+    //     pool.query(query, function(err, rows){
+    //         if (err){
+    //             return err;
+    //         } else {
+    //             let totalCount = rows[0].TotalCount;
+    //             let limit = 5;
+    //             let total_page = Math.ceil(totalCount/limit);
+    //             let start = (page - 1) * limit;
+    //             //var query = "SELECT * from users ORDER BY id DESC limit ?,?";
+    //             var parameters = [start,limit];
+    //             query = mysql.format(query, parameters);
+    //             pool.query(query, function(err,rest){
+    //                 if (err){
+    //                     res.json(err);
+    //                 } else {
+    //                     res.json(rest)
+    //                 }
+    //             })
+    //         }
+    //     })
+    // },
+    
 }
