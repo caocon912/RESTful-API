@@ -86,7 +86,8 @@ module.exports = {
                               current: page,
                               perPage: limit,
                               previous: page > 0 ? page - 1 : undefined,
-                              next: page < total_page - 1 ? page + 1 : undefined
+                              next: page < total_page - 1 ? page + 1 : undefined,
+                              totalPage: total_page
                             }
                           }
                           else responsePayload.pagination = {
